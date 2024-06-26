@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenMap Example</title>
+    <title>Mission module display tool</title>
     <link rel="stylesheet" href="https://openlayers.org/en/v6.15.1/css/ol.css" type="text/css">
     <script src="https://openlayers.org/en/v6.15.1/build/ol.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -23,7 +23,7 @@
 <body>
     <div id="map"></div>
     <script>
-        let colors = ['#FF0000', '#00F000', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF'];
+        let colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF'];
         var routeLayers = [];
         var initialLoad = true;
 
@@ -98,10 +98,9 @@
                 map.addLayer(lastPointLayer);
                 routeLayers.push(lastPointLayer);
 
-                if (initialLoad) {
+                if (fitView) {
                     var extent = route.getGeometry().getExtent();
-                    map.getView().fit(extent, { padding: [1000, 1000, 1000, 1000] });
-                    initialLoad = false;
+                    map.getView().fit(extent, { padding: [100, 100, 100, 100] });
                 }
             }
         }
@@ -110,12 +109,19 @@
             fetch('/api/routes')
                 .then(response => response.json())
                 .then(data => {
+                    // Remove existing route layers
                     routeLayers.forEach(layer => map.removeLayer(layer));
                     routeLayers = [];
 
+                    // Add new routes
                     data.routes.forEach((route, index) => {
                         addRouteToMap(route.points, colors[index % colors.length], route.name, initialLoad);
                     });
+
+                    initialLoad = false; // Ensure initial load logic is only used once
+                })
+                .catch(error => {
+                    console.error('Error fetching routes:', error);
                 });
         }
 

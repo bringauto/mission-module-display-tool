@@ -1,0 +1,6 @@
+{
+    "api-url": "http://localhost:8080/v2/protocol",
+    "api-key": "ProtocolStaticAccessKey",
+    "wait": "true",
+    "since": "0"
+}
