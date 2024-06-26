@@ -6,7 +6,7 @@ import logging
 class VehiclesCommunicator:
     def __init__(self, settings):
         self.url = settings["api-url"]
-        self.params = {"api_key": settings["api-key"], "wait": settings["wait"], "since": settings["since"]}
+        self.params = {"api_key": settings["api-key"], "wait": True, "since": settings["since"]}
         logging.info(f"Initializing with API URL: {self.url}")
         self.__wait_till_api_is_available()
         self.__init_vehicles_positions()

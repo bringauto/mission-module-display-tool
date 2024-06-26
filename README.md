@@ -12,9 +12,13 @@ pip install -r requirements.txt
 
 ## Command line arguments
 
+* `--config=<string>` - path to the JSON configuration file. If not set, the default path `./resources/config.json` is used.
+
 ## JSON configuration
 
-* `--config=<string>` - path to the JSON configuration file. If not set, the default path `./resources/config.json` is used.
+* `api-url` - URL of the fleet protocol HTTP API.
+* `api-key` - API key for the fleet protocol HTTP API.
+* `since` - The timestamp from which the data should be displayed. If set to `0`, the tool will display all data.
 
 ## Usage
 
