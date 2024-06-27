@@ -38,22 +38,35 @@ class VehiclesCommunicator:
             for car in cars_json:
                 self.vehicles_positions[f"{car['company_name']}/{car['car_name']}"] = []
 
+    def __access_nested_dict(self, dict_obj, keys):
+        for key in keys:
+            if key in dict_obj:
+                dict_obj = dict_obj[key]
+            else:
+                return None
+        return dict_obj
+    
+    def __get_telemetry(self, device):
+        return self.__access_nested_dict(device, ["payload", "data", "telemetry"])
+
     def __send_request(self, url_postfix):
         try:
             response = requests.get(f"{self.url}{url_postfix}", params=self.params)
             response.raise_for_status()
             return response.json()
+
         except requests.exceptions.HTTPError as e:
             logging.error(f"HTTP error: {e.response.status_code}")
             if e.response.status_code == 401:
-                logging.error("Invalid API key. Exiting.")
-                exit(1)
+                raise ValueError("Invalid API key.")
+
             elif e.response.status_code == 404:
-                logging.error("Endpoint not found. Exiting.")
-                exit(1)
+                raise ValueError("Protocol HTTP API is not available.")
+
             else:
                 self.__wait_till_api_is_available()
                 return self.__send_request(url_postfix)
+
         except requests.exceptions.ConnectionError:
             logging.error("Failed to connect to Protocol HTTP API. Retrying.")
             self.__wait_till_api_is_available()
@@ -65,14 +78,15 @@ class VehiclesCommunicator:
 
         if car_status_json:
             device = car_status_json[-1]
-            positions = device.get("payload", {}).get("data", {}).get("telemetry", {}).get("position", {})
-            if positions:
-                return {"lat": positions.get("latitude"), "lon": positions.get("longitude")}
+            position = self.__get_telemetry(device)
+            if position:
+                return {"lat": position.get("latitude"), "lon": position.get("longitude")}
         return None
 
-    def get_positions(self):
+    def get_all_cars_position(self):
         cars_json = self.__send_request("/cars")
         cars_positions = {}
+        logging.debug(f"Received cars: {cars_json}")
 
         if cars_json:
             for car in cars_json:

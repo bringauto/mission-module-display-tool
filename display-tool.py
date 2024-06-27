@@ -19,7 +19,9 @@ def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Protocol HTTP API client")
     parser.add_argument("--config", type=str, default="resources/config.json", help="Path to the configuration file")
-    return parser.parse_args()
+    arguments = parser.parse_args()
+    validate_config_path(arguments.config)
+    return arguments
 
 
 def validate_config_path(config_path):
@@ -43,10 +45,11 @@ def start_background_thread(settings, stop_event):
     """Start the background thread for vehicle communication."""
 
     def vc_thread():
-        vc = VehiclesCommunicator(settings)
+        vehicles_communicator = VehiclesCommunicator(settings)
         while not stop_event.is_set():
             time.sleep(1)
-            positions = vc.get_positions()
+            positions = vehicles_communicator.get_all_cars_position()
+            logging.info(f"Received positions: {positions}")
             for route_name, point in positions.items():
                 if point:
                     route_manager.add_point(route_name, point)
@@ -70,13 +73,16 @@ def get_routes():
 def initialize_app():
     """Initialize the Flask app and start the server."""
     args = parse_arguments()
-    validate_config_path(args.config)
     settings = load_settings(args.config)
 
     stop_event = threading.Event()
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         start_background_thread(settings, stop_event)
 
+    return stop_event
+
+
+def run_app(stop_event):
     try:
         socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host="0.0.0.0", port=5000)
     except KeyboardInterrupt:
@@ -88,7 +94,9 @@ if __name__ == "__main__":
         format="[%(asctime)s] [%(levelname)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
     try:
-        initialize_app()
+        stop_event = initialize_app()
+        run_app(stop_event)
+
     except Exception as e:
         logging.error(e)
         exit(1)
