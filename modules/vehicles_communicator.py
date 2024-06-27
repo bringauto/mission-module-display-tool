@@ -4,6 +4,12 @@ import logging
 
 
 class VehiclesCommunicator:
+    class AuthenticationException(Exception):
+        pass
+
+    class ApiUnavailableException(Exception):
+        pass
+
     def __init__(self, settings):
         self.url = settings["api-url"]
         self.params = {"api_key": settings["api-key"], "wait": True, "since": settings["since"]}
@@ -19,11 +25,9 @@ class VehiclesCommunicator:
                 if response.status_code == 200:
                     break
                 elif response.status_code == 401:
-                    raise ValueError("Invalid API key.")
-
+                    raise self.AuthenticationException("Invalid API key.")
                 elif response.status_code == 404:
-                    logging.error("Protocol HTTP API is not available.")
-                    exit(1)
+                    raise self.ApiUnavailableException("Protocol HTTP API is not available.")
                 else:
                     logging.error(f"Unexpected error: {response.status_code}")
                     time.sleep(5)
@@ -45,7 +49,7 @@ class VehiclesCommunicator:
             else:
                 return None
         return dict_obj
-    
+
     def __get_telemetry(self, device):
         return self.__access_nested_dict(device, ["payload", "data", "telemetry", "position"])
 
@@ -75,7 +79,7 @@ class VehiclesCommunicator:
     def get_position(self, car):
         request_url = f"/status/{car['company_name']}/{car['car_name']}"
         car_status_json = self.__send_request(request_url)
-        
+
         if car_status_json:
             device = car_status_json[-1]
             position = self.__get_telemetry(device)
@@ -86,7 +90,6 @@ class VehiclesCommunicator:
     def get_all_cars_position(self):
         cars_json = self.__send_request("/cars")
         cars_positions = {}
-        logging.debug(f"Received cars: {cars_json}")
 
         if cars_json:
             for car in cars_json:

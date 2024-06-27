@@ -44,17 +44,21 @@ def load_settings(config_path):
 def start_background_thread(settings, stop_event):
     """Start the background thread for vehicle communication."""
 
-    def vc_thread():
-        vehicles_communicator = VehiclesCommunicator(settings)
-        while not stop_event.is_set():
-            time.sleep(1)
-            positions = vehicles_communicator.get_all_cars_position()
-            logging.info(f"Received positions: {positions}")
-            for route_name, point in positions.items():
-                if point:
-                    route_manager.add_point(route_name, point)
+    def vehicle_communicator_thread():
+        try:
+            vehicles_communicator = VehiclesCommunicator(settings)
+            while not stop_event.is_set():
+                time.sleep(1)
+                positions = vehicles_communicator.get_all_cars_position()
+                for route_name, point in positions.items():
+                    if point:
+                        route_manager.add_point(route_name, point)
 
-    thread = threading.Thread(target=vc_thread)
+        except Exception as e:
+            logging.error(e)
+            stop_event.set()
+
+    thread = threading.Thread(target=vehicle_communicator_thread)
     thread.daemon = True
     thread.start()
     return thread
@@ -70,16 +74,13 @@ def get_routes():
     return jsonify({"routes": route_manager.routes})
 
 
-def initialize_app():
+def initialize_app(stop_event):
     """Initialize the Flask app and start the server."""
     args = parse_arguments()
     settings = load_settings(args.config)
 
-    stop_event = threading.Event()
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         start_background_thread(settings, stop_event)
-
-    return stop_event
 
 
 def run_app(stop_event):
@@ -94,7 +95,8 @@ if __name__ == "__main__":
         format="[%(asctime)s] [%(levelname)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
     try:
-        stop_event = initialize_app()
+        stop_event = threading.Event()
+        initialize_app(stop_event)
         run_app(stop_event)
 
     except Exception as e:
