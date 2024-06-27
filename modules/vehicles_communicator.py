@@ -19,8 +19,8 @@ class VehiclesCommunicator:
                 if response.status_code == 200:
                     break
                 elif response.status_code == 401:
-                    logging.error("Invalid API key.")
-                    exit(1)
+                    raise ValueError("Invalid API key.")
+
                 elif response.status_code == 404:
                     logging.error("Protocol HTTP API is not available.")
                     exit(1)
@@ -47,7 +47,7 @@ class VehiclesCommunicator:
         return dict_obj
     
     def __get_telemetry(self, device):
-        return self.__access_nested_dict(device, ["payload", "data", "telemetry"])
+        return self.__access_nested_dict(device, ["payload", "data", "telemetry", "position"])
 
     def __send_request(self, url_postfix):
         try:
@@ -75,7 +75,7 @@ class VehiclesCommunicator:
     def get_position(self, car):
         request_url = f"/status/{car['company_name']}/{car['car_name']}"
         car_status_json = self.__send_request(request_url)
-
+        
         if car_status_json:
             device = car_status_json[-1]
             position = self.__get_telemetry(device)
