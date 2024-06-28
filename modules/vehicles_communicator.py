@@ -30,10 +30,11 @@ class VehiclesCommunicator:
                     raise self.ApiUnavailableException("Protocol HTTP API is not available.")
                 else:
                     logging.error(f"Unexpected error: {response.status_code}")
-                    time.sleep(5)
+                    
             except requests.exceptions.ConnectionError:
                 logging.warning("Protocol HTTP API is not available. Retrying in 5 seconds.")
-                time.sleep(5)
+
+            time.sleep(5)
 
     def __init_vehicles_positions(self):
         self.vehicles_positions = {}

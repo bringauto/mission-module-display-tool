@@ -43,10 +43,10 @@ def load_settings(config_path):
 
 def start_background_thread(settings, stop_event):
     """Start the background thread for vehicle communication."""
+    vehicles_communicator = VehiclesCommunicator(settings)
 
     def vehicle_communicator_thread():
         try:
-            vehicles_communicator = VehiclesCommunicator(settings)
             while not stop_event.is_set():
                 time.sleep(1)
                 positions = vehicles_communicator.get_all_cars_position()
