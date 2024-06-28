@@ -47,7 +47,7 @@ Replace `<network>` with the name of the container network where the HTTP API is
 docker run -p 5000:5000 --network=<network> mission-module-display-tool --config=resources/config-docker.json
 ```
 
-If option `--config` is not set, the default configuration file `./resources/config-docker.json` is used.
+If option `--config` is not set, the default configuration file `resources/config-docker.json` is used.
 
 ### Example for use with [bringauto/etna](https://github.com/bringauto/etna)
 
