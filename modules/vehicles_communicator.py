@@ -26,8 +26,7 @@ class VehiclesCommunicator:
                     break
                 elif response.status_code == 401:
                     raise self.AuthenticationException("Invalid API key.")
-                elif response.status_code == 404:
-                    raise self.ApiUnavailableException("Protocol HTTP API is not available.")
+
                 else:
                     logging.error(f"Unexpected error: {response.status_code}")
                     
@@ -65,8 +64,6 @@ class VehiclesCommunicator:
             if e.response.status_code == 401:
                 raise ValueError("Invalid API key.")
 
-            elif e.response.status_code == 404:
-                raise ValueError("Protocol HTTP API is not available.")
 
             else:
                 self.__wait_till_api_is_available()
