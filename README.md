@@ -7,6 +7,7 @@ This tool is used to display the positions of the cars on the map using the [fle
 ```bash
 git clone https://github.com/bringauto/mission-module-display-tool.git
 cd mission-module-display-tool
+mkdir logs
 pip install -r requirements.txt
 ```
 
