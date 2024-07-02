@@ -24,9 +24,8 @@ class RouteManager:
         """Add a point to the specified route, creating the route if it doesn't exist."""
         route_name = car.get_name()
         point = car.last_position.get_as_dict()
-        if route_name in self.routes:
-            if len(self.routes[route_name]) > 0 and self.routes[route_name][-1] == point:
-                return
+        if route_name in self.routes and len(self.routes[route_name]) > 0 and self.routes[route_name][-1] == point:
+            return
 
         self.routes[route_name].append(point)
 
