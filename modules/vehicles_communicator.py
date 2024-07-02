@@ -6,6 +6,9 @@ from modules.car import Car
 
 
 class VehiclesCommunicator:
+    """
+    A class that communicates with the vehicles API to retrieve vehicle information and positions.
+    """
     class AuthenticationException(Exception):
         pass
 
