@@ -19,6 +19,7 @@ pip install -r requirements.txt
 
 * `api-url` - URL of the fleet protocol HTTP API.
 * `api-key` - API key for the fleet protocol HTTP API.
+* `port` - port on which the web server will run.
 
 ## Usage
 

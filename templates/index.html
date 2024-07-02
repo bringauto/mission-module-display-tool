@@ -23,7 +23,7 @@
 <body>
     <div id="map"></div>
     <script>
-        let colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF'];
+        let colors = ['#E6194B', '#3CB44B', '#FFE119', '#4363D8', '#F58231', '#911EB4', '#46F0F0', '#F032E6', '#BCF60C', '#FABEBE'];
         var routeLayers = [];
         var initialLoad = true;
 
@@ -114,8 +114,13 @@
                     routeLayers = [];
 
                     // Add new routes
-                    data.routes.forEach((route, index) => {
-                        addRouteToMap(route.points, colors[index % colors.length], route.name, initialLoad);
+                    Object.entries(data.routes).forEach(([routeName, routePoints]) => {
+                        if (routePoints.length > 0) {
+                            console.log(`Adding route ${routeName} with points:`, routePoints);
+                            addRouteToMap(routePoints, colors[routeLayers.length % colors.length], routeName, initialLoad);
+                        } else {
+                            console.error(`No valid points found for route ${routeName}`);
+                        }
                     });
 
                     initialLoad = false; // Ensure initial load logic is only used once

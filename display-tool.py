@@ -19,9 +19,10 @@ def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Protocol HTTP API client")
     parser.add_argument("--config", type=str, default="resources/config.json", help="Path to the configuration file")
-    arguments = parser.parse_args()
-    validate_config_path(arguments.config)
-    return arguments
+    args = parser.parse_args()
+    if not os.path.exists(args.config):
+        logging.error(f"Configuration file {args.config} does not exist.")
+    return args
 
 
 def validate_config_path(config_path):
@@ -38,7 +39,6 @@ def load_settings(config_path):
             return json.load(f)
     except Exception as e:
         logging.error(f"Failed to load configuration file {config_path}: {e}")
-        exit(1)
 
 
 def start_background_thread(settings, stop_event):
@@ -46,17 +46,17 @@ def start_background_thread(settings, stop_event):
     vehicles_communicator = VehiclesCommunicator(settings)
 
     def vehicle_communicator_thread():
-        try:
-            while not stop_event.is_set():
+        while not stop_event.is_set():
+            try:
                 time.sleep(1)
-                positions = vehicles_communicator.get_all_cars_position()
-                for route_name, point in positions.items():
-                    if point:
-                        route_manager.add_point(route_name, point)
+                cars = vehicles_communicator.get_all_cars_position()
+                for car in cars:
+                    route_manager.add_point(car)
+            except Exception as e:
+                logging.error(f"Exception in vehicle_communicator_thread: {e}")
+                time.sleep(5)
+                
 
-        except Exception as e:
-            logging.error(e)
-            stop_event.set()
 
     thread = threading.Thread(target=vehicle_communicator_thread)
     thread.daemon = True
@@ -75,17 +75,18 @@ def get_routes():
 
 
 def initialize_app(stop_event):
-    """Initialize the Flask app and start the server."""
+    """Parse args and start background thread."""
     args = parse_arguments()
     settings = load_settings(args.config)
 
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         start_background_thread(settings, stop_event)
+    return settings
 
 
-def run_app(stop_event):
+def run_app(port,stop_event):
     try:
-        socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host="0.0.0.0", port=5000)
+        socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host="0.0.0.0", port=port)
     except KeyboardInterrupt:
         stop_event.set()
 
@@ -96,8 +97,12 @@ if __name__ == "__main__":
     )
     try:
         stop_event = threading.Event()
-        initialize_app(stop_event)
-        run_app(stop_event)
+        settings = initialize_app(stop_event)
+        run_app(settings["port"],stop_event)
+
+    except KeyboardInterrupt:
+        logging.info("Exiting...")
+        exit(0)
 
     except Exception as e:
         logging.error(e)

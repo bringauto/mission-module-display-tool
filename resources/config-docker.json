@@ -1,4 +1,6 @@
 {
     "api-url": "http://http-api:8080/v2/protocol",
-    "api-key": "ProtocolStaticAccessKey"
+    "api-key": "ProtocolStaticAccessKey",
+    "port": 5000
+
 }
