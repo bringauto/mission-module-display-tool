@@ -13,7 +13,7 @@ pip install -r requirements.txt
 
 ## Command line arguments
 
-* `--config=<string>` - path to the JSON configuration file. If not set, the default path `./resources/config.json` is used.
+* `--config=<string>` - path to the JSON configuration file. If not set, the default path `./config/config.json` is used.
 
 ## JSON configuration
 
@@ -32,7 +32,7 @@ python3 display-tool.py
 Starting the tool with a custom configuration:
 
 ```bash
-python3 display-tool.py --config=./resources/config.json
+python3 display-tool.py --config=./config/config.json
 ```
 
 It will start web server on `http://localhost:5000/` and display the map with the cars.
@@ -46,10 +46,10 @@ docker build -t mission-module-display-tool .
 Replace `<network>` with the name of the container network where the HTTP API is running.
 
 ```bash
-docker run -p 5000:5000 --network=<network> mission-module-display-tool --config=resources/config-docker.json
+docker run -p 5000:5000 --network=<network> mission-module-display-tool --config=config/config-docker.json
 ```
 
-If option `--config` is not set, the default configuration file `resources/config-docker.json` is used.
+If option `--config` is not set, the default configuration file `config/config-docker.json` is used.
 
 ### Example for use with [bringauto/etna](https://github.com/bringauto/etna)
 
@@ -60,7 +60,7 @@ docker build -t mission-module-display-tool .
 ```
 
 ```bash
-docker run -p 5000:5000 --network=bring-emulator mission-module-display-tool --config=resources/config-docker.json
+docker run -p 5000:5000 --network=bring-emulator mission-module-display-tool --config=config/config-docker.json
 ```
 
 In this example, the network is set to `bring-emulator`, which is the network name used by the bringauto/etna project docker compose file.

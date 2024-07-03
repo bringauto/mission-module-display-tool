@@ -8,8 +8,8 @@ import threading
 from flask_socketio import SocketIO
 from flask import Flask, render_template, jsonify
 
-from modules.route_manager import RouteManager
-from modules.vehicles_communicator import VehiclesCommunicator
+from lib.route_manager import RouteManager
+from lib.vehicles_communicator import VehiclesCommunicator
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -20,7 +20,7 @@ route_manager = RouteManager(socketio)
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Protocol HTTP API client")
-    parser.add_argument("--config", type=str, default="resources/config.json", help="Path to the configuration file")
+    parser.add_argument("--config", type=str, default="config/config.json", help="Path to the configuration file")
     args = parser.parse_args()
     if not os.path.exists(args.config):
         logging.error(f"Configuration file {args.config} does not exist.")
