@@ -1,14 +1,16 @@
-import requests
 import time
 import logging
-from modules.point import Point
-from modules.car import Car
+import requests
+
+from .car import Car
+from .point import Point
 
 
 class VehiclesCommunicator:
     """
     A class that communicates with the vehicles API to retrieve vehicle information and positions.
     """
+
     class AuthenticationException(Exception):
         pass
 
@@ -72,7 +74,7 @@ class VehiclesCommunicator:
             self._wait_till_api_is_available()
             return self._send_request(url_postfix)
 
-    def get_position(self, car):
+    def get_position(self, car) -> Point | None:
         request_url = f"/status/{car['company_name']}/{car['car_name']}"
         car_status_json = self._send_request(request_url)
 
@@ -83,13 +85,13 @@ class VehiclesCommunicator:
                 return Point(position.get("latitude"), position.get("longitude"))
         return None
 
-    def get_all_cars_position(self):
+    def get_all_cars_position(self) -> list[Car]:
         cars_json = self._send_request("/cars")
-        cars = []
+        cars: list[Car] = []
 
         if cars_json:
-            for car in cars_json:
-                point = self.get_position(car)
+            for car_json in cars_json:
+                point = self.get_position(car_json)
                 if point:
-                    cars.append(Car(car["company_name"], car["car_name"], point))
+                    cars.append(Car(car_json["company_name"], car_json["car_name"], point))
         return cars

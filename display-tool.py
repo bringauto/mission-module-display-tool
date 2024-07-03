@@ -4,10 +4,12 @@ import time
 import logging
 import argparse
 import threading
-from flask import Flask, render_template, jsonify
+
 from flask_socketio import SocketIO
-from modules.vehicles_communicator import VehiclesCommunicator
+from flask import Flask, render_template, jsonify
+
 from modules.route_manager import RouteManager
+from modules.vehicles_communicator import VehiclesCommunicator
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -55,8 +57,6 @@ def start_background_thread(settings, stop_event):
             except Exception as e:
                 logging.error(f"Exception in vehicle_communicator_thread: {e}")
                 time.sleep(5)
-                
-
 
     thread = threading.Thread(target=vehicle_communicator_thread)
     thread.daemon = True
@@ -84,7 +84,7 @@ def initialize_app(stop_event):
     return settings
 
 
-def run_app(port,stop_event):
+def run_app(port, stop_event):
     try:
         socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host="0.0.0.0", port=port)
     except KeyboardInterrupt:
@@ -93,12 +93,14 @@ def run_app(port,stop_event):
 
 if __name__ == "__main__":
     logging.basicConfig(
-        format="[%(asctime)s] [%(levelname)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
+        format="[%(asctime)s] [%(levelname)s] %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     try:
         stop_event = threading.Event()
         settings = initialize_app(stop_event)
-        run_app(settings["port"],stop_event)
+        run_app(settings["port"], stop_event)
 
     except KeyboardInterrupt:
         logging.info("Exiting...")

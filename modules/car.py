@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from modules.point import Point
+
+from .point import Point
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Car:
     """
     Represents a car object.
@@ -15,9 +16,9 @@ class Car:
 
     company_name: str
     car_name: str
-    last_position: Point = Point(0, 0)
+    last_position: Point
 
-    def get_name(self):
+    def get_name(self) -> str:
         """
         Returns the name of the car in the format 'company_name/car_name'.
 
@@ -25,4 +26,3 @@ class Car:
             str: The name of the car.
         """
         return f"{self.company_name}/{self.car_name}"
-    
