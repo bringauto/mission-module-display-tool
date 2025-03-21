@@ -10,7 +10,7 @@ COPY lib /home/bringauto/mission-module-display-tool/lib/
 COPY templates /home/bringauto/mission-module-display-tool/templates/
 COPY display-tool.py /home/bringauto/mission-module-display-tool/
 
-EXPOSE 5000 8080
+EXPOSE 5000 5000
 
 ENTRYPOINT ["bash", "-c", "$PYTHON_ENVIRONMENT_PYTHON3 /home/bringauto/mission-module-display-tool/display-tool.py $0 $@"]
 CMD ["--config", "/home/bringauto/config/config-docker.json"]
