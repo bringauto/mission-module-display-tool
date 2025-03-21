@@ -2,7 +2,7 @@ import logging
 from dataclasses import asdict
 from collections import defaultdict
 
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO # type: ignore
 
 from .car import Car
 
