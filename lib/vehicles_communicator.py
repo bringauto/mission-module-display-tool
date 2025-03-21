@@ -1,10 +1,12 @@
 import time
 import logging
-import requests
 
-from .car import Car
-from .point import Point
+from .car import Car as UiCar
+from .point import Point as UiPoint
 
+from urllib3.exceptions import MaxRetryError
+from fleet_http_client_python import ApiClient, Configuration, CarApi, DeviceApi, Car # type: ignore
+from fleet_http_client_python.exceptions import UnauthorizedException # type: ignore
 
 class VehiclesCommunicator:
     """
@@ -14,84 +16,95 @@ class VehiclesCommunicator:
     class AuthenticationException(Exception):
         pass
 
-    class ApiUnavailableException(Exception):
-        pass
 
     def __init__(self, settings):
-        self._url = settings["api-url"]
-        self._params = {"api_key": settings["api-key"], "wait": True, "since": 0}
-        logging.info(f"Initializing with API URL: {self._url}")
+        api_configuration = Configuration(
+            host=str(settings["api-url"]),
+            api_key={'AdminAuth': str(settings["api-key"])}
+        )
+        api_configuration.retries = 0
+        api_client = ApiClient(api_configuration)
+        self._car_api = CarApi(api_client)
+        self._device_api = DeviceApi(api_client)
+        logging.info(f"Initializing with API URL: {str(settings['api-url'])}")
         self._wait_till_api_is_available()
+        self._last_car_timestamps = {}
+
 
     def _wait_till_api_is_available(self):
         logging.info("Waiting for Protocol HTTP API to become available.")
         while True:
             try:
-                response = requests.get(f"{self._url}/cars", params=self._params)
-                logging.info(f"Got API response from fleet protocol: {response.status_code}")
-                if response.status_code == 200:
-                    break
-                elif response.status_code == 401:
-                    raise self.AuthenticationException("Invalid API key.")
-
-                else:
-                    logging.error(f"Unexpected error: {response.status_code}")
-
-            except requests.exceptions.ConnectionError:
+                self._car_api.available_cars(wait=True, since=0)
+                logging.info("Got response from fleet protocol API.")
+                break
+            except UnauthorizedException:
+                raise self.AuthenticationException("Invalid API key.")
+            except MaxRetryError:
                 logging.warning("Protocol HTTP API is not available. Retrying in 5 seconds.")
+            except Exception as e:
+                logging.warning(f"Unexpected error: {e}. Retrying in 5 seconds.")
 
             time.sleep(5)
         logging.info("Protocol HTTP API is available.")
 
-    def _access_nested_dict(self, dict_obj, keys):
-        for key in keys:
-            if key in dict_obj:
-                dict_obj = dict_obj[key]
-            else:
-                return None
-        return dict_obj
 
-    def _get_telemetry(self, device):
-        return self._access_nested_dict(device, ["payload", "data", "telemetry", "position"])
-
-    def _send_request(self, url_postfix):
+    def _get_position(self, data):
         try:
-            response = requests.get(f"{self._url}{url_postfix}", params=self._params)
-            response.raise_for_status()
-            return response.json()
+            return data.get("telemetry").get("position")
+        except:
+            return None
 
-        except requests.exceptions.HTTPError as e:
-            logging.error(f"HTTP error: {e.response.status_code}")
-            if e.response.status_code == 401:
-                raise ValueError("Invalid API key.") from e
 
-            else:
-                self._wait_till_api_is_available()
-                return self._send_request(url_postfix)
+    def _construct_car_name(self, car: Car) -> str:
+        return car.company_name + "/" + car.car_name
 
-        except requests.exceptions.ConnectionError:
+
+    def _send_request(self, function):
+        try:
+            return function()
+        except UnauthorizedException:
+            raise self.AuthenticationException("Invalid API key.")
+        except MaxRetryError:
             logging.error("Failed to connect to Protocol HTTP API. Retrying.")
-            self._wait_till_api_is_available()
-            return self._send_request(url_postfix)
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}. Retrying.")
 
-    def get_position(self, car) -> Point | None:
-        request_url = f"/status/{car['company_name']}/{car['car_name']}"
-        car_status_json = self._send_request(request_url)
+        self._wait_till_api_is_available()
+        return self._send_request(function)
 
-        if car_status_json:
-            device = car_status_json[-1]
-            position = self._get_telemetry(device)
+
+    def get_point(self, car: Car) -> UiPoint | None:
+        car_identification = self._construct_car_name(car)
+        car_statuses = self._send_request(
+            lambda: self._device_api.list_statuses(car.company_name,
+                                                   car.car_name,
+                                                   since=self._last_car_timestamps[car_identification],
+                                                   wait=False)
+        )
+
+        if car_statuses:
+            self._last_car_timestamps[car_identification] = car_statuses[-1].timestamp
+            payload = car_statuses[-1].payload.data.to_dict()
+            position = self._get_position(payload)
             if position:
-                return Point(position.get("latitude"), position.get("longitude"))
+                return UiPoint(position.get("latitude"), position.get("longitude"))
         return None
 
-    def get_all_cars_position(self) -> list[Car]:
-        cars_json = self._send_request("/cars")
-        cars: list[Car] = []
 
-        if cars_json:
-            for car_json in cars_json:
-                point = self.get_position(car_json)
+    def get_all_cars_position(self) -> list[UiCar]:
+        cars = self._send_request(
+            lambda: self._car_api.available_cars(wait=True, since=0)
+        )
+        for car in cars:
+            car_identification = self._construct_car_name(car)
+            if car_identification not in self._last_car_timestamps:
+                self._last_car_timestamps[car_identification] = 0
+
+        ret: list[UiCar] = []
+        if cars:
+            for car in cars:
+                point = self.get_point(car)
                 if point:
-                    cars.append(Car(car_json["company_name"], car_json["car_name"], point))
-        return cars
+                    ret.append(UiCar(car.company_name, car.car_name, point))
+        return ret

@@ -5,8 +5,8 @@ import logging
 import argparse
 import threading
 
-from flask_socketio import SocketIO
-from flask import Flask, render_template, jsonify
+from flask_socketio import SocketIO # type: ignore
+from flask import Flask, render_template, jsonify # type: ignore
 
 from lib.route_manager import RouteManager
 from lib.vehicles_communicator import VehiclesCommunicator

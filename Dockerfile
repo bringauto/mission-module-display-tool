@@ -1,11 +1,16 @@
-FROM bringauto/python-environment
-WORKDIR /mission-module-display-tool
+FROM bringauto/python-environment:latest
 
-COPY . /mission-module-display-tool
+WORKDIR /home/bringauto
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /home/bringauto/mission-module-display-tool/requirements.txt
+RUN "$PYTHON_ENVIRONMENT_PYTHON3" -m pip install -r /home/bringauto/mission-module-display-tool/requirements.txt
+
+COPY config/config-docker.json /home/bringauto/config/config-docker.json
+COPY lib /home/bringauto/mission-module-display-tool/lib/
+COPY templates /home/bringauto/mission-module-display-tool/templates/
+COPY display-tool.py /home/bringauto/mission-module-display-tool/
 
 EXPOSE 5000 8080
 
-ENTRYPOINT ["python3", "display-tool.py"]
-CMD ["--config", "config/config-docker.json"]
+ENTRYPOINT ["bash", "-c", "$PYTHON_ENVIRONMENT_PYTHON3 /home/bringauto/mission-module-display-tool/display-tool.py $0 $@"]
+CMD ["--config", "/home/bringauto/config/config-docker.json"]
